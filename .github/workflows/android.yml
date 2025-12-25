@@ -1,4 +1,4 @@
-name: Stable Build Fix
+name: Old School Build
 
 on:
   push:
@@ -6,66 +6,53 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # Ми примусово беремо старішу, стабільну версію Linux
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
-    # 🛑 ГОЛОВНИЙ ФІКС: Примусово ставимо Gradle 8.2
-    # Це замінить "зламану" системну версію 9.0 на стабільну.
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        gradle-version: '8.2'
-
-    - name: 🏗️ GENERATE PROJECT
+    - name: 🏗️ GENERATE COMPATIBLE PROJECT
       run: |
         # 1. Чистимо все
         rm -rf *
 
-        # 2. Генеруємо файли через Python (щоб було ідеально)
+        # 2. Генеруємо файли через Python
         python3 -c "
         import os
 
         os.makedirs('app/src/main/java/com/example/joystickapp', exist_ok=True)
         os.makedirs('app/src/main/res/layout', exist_ok=True)
 
-        # settings.gradle
+        # settings.gradle (ТІЛЬКИ НАЗВА, жодних налаштувань тут, щоб не було конфліктів)
         with open('settings.gradle', 'w') as f:
-            f.write('''pluginManagement {
-            repositories {
-                google()
-                mavenCentral()
-                gradlePluginPortal()
-            }
-        }
-        dependencyResolutionManagement {
-            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-            repositories {
-                google()
-                mavenCentral()
-            }
-        }
-        rootProject.name = 'JoystickApp'
-        include ':app'
-        ''')
+            f.write(\"rootProject.name = 'JoystickApp'\\ninclude ':app'\")
 
-        # build.gradle (Root) - Використовуємо сумісну версію 8.1.1
+        # build.gradle (Root) - СТАРА ШКОЛА (Всі репозиторії тут)
+        # Це працює на будь-якій версії Gradle!
         with open('build.gradle', 'w') as f:
-            f.write('''plugins {
-            id 'com.android.application' version '8.1.1' apply false
-            id 'org.jetbrains.kotlin.android' version '1.9.0' apply false
+            f.write('''buildscript {
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath 'com.android.tools.build:gradle:8.1.1'
+                classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0'
+            }
+        }
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
         }
         ''')
 
-        # app/build.gradle
+        # app/build.gradle - Максимально простий
         with open('app/build.gradle', 'w') as f:
             f.write('''plugins {
             id 'com.android.application'
@@ -142,7 +129,7 @@ jobs:
         "
 
     - name: Build APK
-      run: gradle assembleDebug --stacktrace
+      run: gradle assembleDebug --stacktrace --warning-mode all
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
