@@ -1,4 +1,4 @@
-name: Fixed Joystick Build
+name: Final Fix Build
 
 on:
   push:
@@ -9,50 +9,129 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions/checkout@v4
+
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: 🪄 GENERATE PROJECT
+    - name: 🧹 CLEAN AND GENERATE
       run: |
-        rm -rf app settings.gradle build.gradle # Чистимо старе
+        # 1. Повне очищення папки від старих помилок
+        rm -rf *
+
+        # 2. Створення папок
         mkdir -p app/src/main/java/com/example/joystickapp
         mkdir -p app/src/main/res/layout
-        
-        # Створюємо файли (якщо тут будуть криві лапки - ми їх виправимо нижче)
-        echo "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }" > settings.gradle
-        echo "dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }" >> settings.gradle
-        echo "rootProject.name = 'JoystickApp'" >> settings.gradle
-        echo "include ':app'" >> settings.gradle
 
-        echo "plugins { id 'com.android.application' version '8.2.0' apply false; id 'org.jetbrains.kotlin.android' version '1.9.0' apply false }" > build.gradle
+        # 3. Створення settings.gradle (безпечний метод)
+        cat <<EOF > settings.gradle
+        pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        rootProject.name = "JoystickApp"
+        include ':app'
+        EOF
 
-        echo "plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }" > app/build.gradle
-        echo "android { namespace 'com.example.joystickapp'; compileSdk 34; defaultConfig { applicationId 'com.example.joystickapp'; minSdk 24; targetSdk 34; versionCode 1; versionName '1.0' } }" >> app/build.gradle
-        echo "dependencies { implementation 'androidx.core:core-ktx:1.12.0'; implementation 'androidx.appcompat:appcompat:1.6.1'; implementation 'com.google.android.material:material:1.11.0'; implementation 'androidx.constraintlayout:constraintlayout:2.1.4' }" >> app/build.gradle
+        # 4. Створення build.gradle (головний)
+        cat <<EOF > build.gradle
+        plugins {
+            id 'com.android.application' version '8.2.0' apply false
+            id 'org.jetbrains.kotlin.android' version '1.9.0' apply false
+        }
+        EOF
 
-        # Маніфест і дизайн
-        echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:label="Joystick" android:theme="@style/Theme.AppCompat.Light.NoActionBar"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>' > app/src/main/AndroidManifest.xml
-        
-        echo '<?xml version="1.0" encoding="utf-8"?><LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center" android:background="#222222"><TextView android:id="@+id/status" android:text="Joystick Ready" android:textColor="#FFF" android:textSize="30sp" android:layout_marginBottom="50dp"/><Button android:id="@+id/btnUp" android:text="UP" android:layout_width="150dp" android:layout_height="100dp"/><Button android:id="@+id/btnDown" android:text="DOWN" android:layout_width="150dp" android:layout_height="100dp"/></LinearLayout>' > app/src/main/res/layout/activity_main.xml
-        
-        # Код програми (MainActivity)
-        echo 'package com.example.joystickapp; import androidx.appcompat.app.AppCompatActivity; import android.os.Bundle; import android.widget.Button; import android.widget.TextView; class MainActivity : AppCompatActivity() { override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); setContentView(R.layout.activity_main); val tv = findViewById<TextView>(R.id.status); findViewById<Button>(R.id.btnUp).setOnClickListener { tv.text = "UP Pressed" }; findViewById<Button>(R.id.btnDown).setOnClickListener { tv.text = "DOWN Pressed" } } }' > app/src/main/java/com/example/joystickapp/MainActivity.kt
+        # 5. Створення app/build.gradle (додаток)
+        cat <<EOF > app/build.gradle
+        plugins {
+            id 'com.android.application'
+            id 'org.jetbrains.kotlin.android'
+        }
+        android {
+            namespace 'com.example.joystickapp'
+            compileSdk 34
+            defaultConfig {
+                applicationId "com.example.joystickapp"
+                minSdk 24
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+            }
+        }
+        dependencies {
+            implementation 'androidx.core:core-ktx:1.12.0'
+            implementation 'androidx.appcompat:appcompat:1.6.1'
+            implementation 'com.google.android.material:material:1.11.0'
+            implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+        }
+        EOF
 
-    - name: 🔧 FIX SMART QUOTES
-      run: |
-        # Ця команда знаходить всі файли .gradle і замінює криві лапки на прямі
-        find . -name "*.gradle" -exec sed -i "s/’/'/g" {} +
-        find . -name "*.gradle" -exec sed -i "s/“/\"/g" {} +
-        find . -name "*.gradle" -exec sed -i "s/”/\"/g" {} +
+        # 6. Маніфест
+        cat <<EOF > app/src/main/AndroidManifest.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <application android:label="Joystick" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+                <activity android:name=".MainActivity" android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+            </application>
+        </manifest>
+        EOF
+
+        # 7. Дизайн (кнопки)
+        cat <<EOF > app/src/main/res/layout/activity_main.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="#222222">
+            <TextView android:id="@+id/status" android:text="Ready" android:textColor="#FFF" android:textSize="30sp"/>
+            <Button android:id="@+id/btnUp" android:text="UP" android:layout_width="150dp" android:layout_height="100dp"/>
+            <Button android:id="@+id/btnDown" android:text="DOWN" android:layout_width="150dp" android:layout_height="100dp"/>
+        </LinearLayout>
+        EOF
+
+        # 8. Код (логіка)
+        cat <<EOF > app/src/main/java/com/example/joystickapp/MainActivity.kt
+        package com.example.joystickapp
+        import androidx.appcompat.app.AppCompatActivity
+        import android.os.Bundle
+        import android.widget.Button
+        import android.widget.TextView
+        class MainActivity : AppCompatActivity() {
+            override fun onCreate(savedInstanceState: Bundle?) {
+                super.onCreate(savedInstanceState)
+                setContentView(R.layout.activity_main)
+                val tv = findViewById<TextView>(R.id.status)
+                findViewById<Button>(R.id.btnUp).setOnClickListener { tv.text = "UP" }
+                findViewById<Button>(R.id.btnDown).setOnClickListener { tv.text = "DOWN" }
+            }
+        }
+        EOF
 
     - name: Build with Gradle
-      run: gradle assembleDebug
+      run: gradle assembleDebug --stacktrace
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: Joystick-APK
+        name: Joystick-App
         path: app/build/outputs/apk/debug/app-debug.apk
