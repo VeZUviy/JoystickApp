@@ -1,4 +1,4 @@
-name: Android Build
+name: Auto-Fix and Build
 
 on:
   push:
@@ -17,21 +17,27 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    - name: 🛠️ AUTO-FIX GRADLE FILES
+      run: |
+        # 1. Переписуємо settings.gradle (щоб було чисто)
+        echo "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }" > settings.gradle
+        echo "dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }" >> settings.gradle
+        echo "rootProject.name = 'JoystickApp'" >> settings.gradle
+        echo "include ':app'" >> settings.gradle
+
+        # 2. Переписуємо головний build.gradle
+        echo "plugins { id 'com.android.application' version '8.2.0' apply false; id 'org.jetbrains.kotlin.android' version '1.9.0' apply false }" > build.gradle
+
+        # 3. Переписуємо app/build.gradle (тут була помилка)
+        echo "plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }" > app/build.gradle
+        echo "android { namespace 'com.example.joystickapp'; compileSdk 34; defaultConfig { applicationId 'com.example.joystickapp'; minSdk 24; targetSdk 34; versionCode 1; versionName '1.0' } }" >> app/build.gradle
+        echo "dependencies { implementation 'androidx.core:core-ktx:1.12.0'; implementation 'androidx.appcompat:appcompat:1.6.1'; implementation 'com.google.android.material:material:1.11.0'; implementation 'androidx.constraintlayout:constraintlayout:2.1.4' }" >> app/build.gradle
+
     - name: Build with Gradle
       run: gradle assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: app-debug
-        path: app/build/outputs/apk/debug/app-debug.apk
-
-
-    - name: Build with Gradle
-      run: ./gradlew assembleDebug
-
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-debug
+        name: Joystick-App
         path: app/build/outputs/apk/debug/app-debug.apk
