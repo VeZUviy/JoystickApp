@@ -1,4 +1,4 @@
-name: Android Build Final
+name: Python Generated Build
 
 on:
   push:
@@ -15,32 +15,152 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: 🏗️ FORCE GENERATE PROJECT
+    - name: 🐍 GENERATE PROJECT WITH PYTHON
       run: |
-        # 1. Чистка
-        rm -rf *
-        
-        # 2. Структура папок
-        mkdir -p app/src/main/java/com/example/joystickapp
-        mkdir -p app/src/main/res/layout
-        
-        # 3. settings.gradle (З ПРИМУСОВИМИ ПЕРЕНОСАМИ РЯДКІВ)
-        printf "pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\ndependencyResolutionManagement {\n    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)\n    repositories {\n        google()\n        mavenCentral()\n    }\n}\nrootProject.name = 'JoystickApp'\ninclude ':app'\n" > settings.gradle
-        
-        # 4. build.gradle (головний)
-        printf "plugins {\n    id 'com.android.application' version '8.2.0' apply false\n    id 'org.jetbrains.kotlin.android' version '1.9.0' apply false\n}\n" > build.gradle
-        
-        # 5. app/build.gradle (модуль)
-        printf "plugins {\n    id 'com.android.application'\n    id 'org.jetbrains.kotlin.android'\n}\nandroid {\n    namespace 'com.example.joystickapp'\n    compileSdk 33\n    defaultConfig {\n        applicationId 'com.example.joystickapp'\n        minSdk 24\n        targetSdk 33\n        versionCode 1\n        versionName '1.0'\n    }\n}\ndependencies {\n    implementation 'androidx.core:core-ktx:1.10.0'\n    implementation 'androidx.appcompat:appcompat:1.6.1'\n    implementation 'com.google.android.material:material:1.9.0'\n    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'\n}\n" > app/build.gradle
-        
-        # 6. Маніфест
-        printf '<?xml version="1.0" encoding="utf-8"?>\n<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n    <application android:label="Joystick" android:theme="@style/Theme.AppCompat.Light.NoActionBar">\n        <activity android:name=".MainActivity" android:exported="true">\n            <intent-filter>\n                <action android:name="android.intent.action.MAIN" />\n                <category android:name="android.intent.category.LAUNCHER" />\n            </intent-filter>\n        </activity>\n    </application>\n</manifest>\n' > app/src/main/AndroidManifest.xml
-        
-        # 7. Дизайн
-        printf '<?xml version="1.0" encoding="utf-8"?>\n<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center" android:background="#222222">\n    <TextView android:id="@+id/status" android:text="Ready" android:textColor="#FFF" android:textSize="30sp"/>\n    <Button android:id="@+id/btnUp" android:text="UP" android:layout_width="150dp" android:layout_height="100dp"/>\n    <Button android:id="@+id/btnDown" android:text="DOWN" android:layout_width="150dp" android:layout_height="100dp"/>\n</LinearLayout>\n' > app/src/main/res/layout/activity_main.xml
-        
-        # 8. Код (MainActivity.kt)
-        printf "package com.example.joystickapp\nimport androidx.appcompat.app.AppCompatActivity\nimport android.os.Bundle\nimport android.widget.Button\nimport android.widget.TextView\nclass MainActivity : AppCompatActivity() {\n    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceState)\n        setContentView(R.layout.activity_main)\n        val tv = findViewById<TextView>(R.id.status)\n        findViewById<Button>(R.id.btnUp).setOnClickListener { tv.text = \"UP\" }\n        findViewById<Button>(R.id.btnDown).setOnClickListener { tv.text = \"DOWN\" }\n    }\n}\n" > app/src/main/java/com/example/joystickapp/MainActivity.kt
+        python3 -c "
+        import os
+
+        # 1. Створюємо папки
+        os.makedirs('app/src/main/java/com/example/joystickapp', exist_ok=True)
+        os.makedirs('app/src/main/res/layout', exist_ok=True)
+
+        # 2. settings.gradle
+        with open('settings.gradle', 'w') as f:
+            f.write('''pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        rootProject.name = 'JoystickApp'
+        include ':app'
+        ''')
+
+        # 3. build.gradle (Головний) - ОНОВЛЕНІ ВЕРСІЇ
+        with open('build.gradle', 'w') as f:
+            f.write('''plugins {
+            id 'com.android.application' version '8.3.0' apply false
+            id 'org.jetbrains.kotlin.android' version '1.9.23' apply false
+        }
+        ''')
+
+        # 4. app/build.gradle
+        with open('app/build.gradle', 'w') as f:
+            f.write('''plugins {
+            id 'com.android.application'
+            id 'org.jetbrains.kotlin.android'
+        }
+
+        android {
+            namespace 'com.example.joystickapp'
+            compileSdk 34
+            defaultConfig {
+                applicationId 'com.example.joystickapp'
+                minSdk 24
+                targetSdk 34
+                versionCode 1
+                versionName '1.0'
+            }
+        }
+
+        dependencies {
+            implementation 'androidx.core:core-ktx:1.12.0'
+            implementation 'androidx.appcompat:appcompat:1.6.1'
+            implementation 'com.google.android.material:material:1.11.0'
+            implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+        }
+        ''')
+
+        # 5. Маніфест
+        with open('app/src/main/AndroidManifest.xml', 'w') as f:
+            f.write('''<?xml version=\"1.0\" encoding=\"utf-8\"?>
+        <manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">
+            <application
+                android:label=\"Joystick\"
+                android:theme=\"@style/Theme.AppCompat.Light.NoActionBar\">
+                <activity
+                    android:name=\".MainActivity\"
+                    android:exported=\"true\">
+                    <intent-filter>
+                        <action android:name=\"android.intent.action.MAIN\" />
+                        <category android:name=\"android.intent.category.LAUNCHER\" />
+                    </intent-filter>
+                </activity>
+            </application>
+        </manifest>
+        ''')
+
+        # 6. MainActivity.kt
+        with open('app/src/main/java/com/example/joystickapp/MainActivity.kt', 'w') as f:
+            f.write('''package com.example.joystickapp
+        import androidx.appcompat.app.AppCompatActivity
+        import android.os.Bundle
+        import android.widget.Button
+        import android.widget.TextView
+
+        class MainActivity : AppCompatActivity() {
+            override fun onCreate(savedInstanceState: Bundle?) {
+                super.onCreate(savedInstanceState)
+                setContentView(R.layout.activity_main)
+
+                val tv = findViewById<TextView>(R.id.status)
+                
+                findViewById<Button>(R.id.btnUp).setOnClickListener {
+                    tv.text = \"UP Pressed\"
+                }
+                
+                findViewById<Button>(R.id.btnDown).setOnClickListener {
+                    tv.text = \"DOWN Pressed\"
+                }
+            }
+        }
+        ''')
+
+        # 7. activity_main.xml
+        with open('app/src/main/res/layout/activity_main.xml', 'w') as f:
+            f.write('''<?xml version=\"1.0\" encoding=\"utf-8\"?>
+        <LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"
+            android:layout_width=\"match_parent\"
+            android:layout_height=\"match_parent\"
+            android:orientation=\"vertical\"
+            android:gravity=\"center\"
+            android:background=\"#222222\">
+
+            <TextView
+                android:id=\"@+id/status\"
+                android:layout_width=\"wrap_content\"
+                android:layout_height=\"wrap_content\"
+                android:text=\"Joystick Ready\"
+                android:textColor=\"#FFFFFF\"
+                android:textSize=\"32sp\"
+                android:layout_marginBottom=\"50dp\"/>
+
+            <Button
+                android:id=\"@+id/btnUp\"
+                android:layout_width=\"200dp\"
+                android:layout_height=\"120dp\"
+                android:text=\"UP\"
+                android:textSize=\"24sp\"
+                android:layout_marginBottom=\"20dp\"/>
+
+            <Button
+                android:id=\"@+id/btnDown\"
+                android:layout_width=\"200dp\"
+                android:layout_height=\"120dp\"
+                android:text=\"DOWN\"
+                android:textSize=\"24sp\"/>
+
+        </LinearLayout>
+        ''')
+        "
 
     - name: Build with Gradle
       run: gradle assembleDebug --stacktrace
