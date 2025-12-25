@@ -1,4 +1,4 @@
-name: Python Generated Build
+name: Nuclear Fix Build
 
 on:
   push:
@@ -15,18 +15,22 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: 🐍 GENERATE PROJECT WITH PYTHON
+    - name: ☢️ NUKE AND REBUILD
       run: |
-        python3 -c "
+        # 1. Повне знищення старих файлів
+        rm -rf *
+
+        # 2. Створюємо Python-генератор (найбезпечніший спосіб)
+        cat << 'EOF' > builder.py
         import os
 
-        # 1. Створюємо папки
+        # Створення папок
         os.makedirs('app/src/main/java/com/example/joystickapp', exist_ok=True)
         os.makedirs('app/src/main/res/layout', exist_ok=True)
 
-        # 2. settings.gradle
+        # settings.gradle
         with open('settings.gradle', 'w') as f:
-            f.write('''pluginManagement {
+            f.write("""pluginManagement {
             repositories {
                 google()
                 mavenCentral()
@@ -42,128 +46,99 @@ jobs:
         }
         rootProject.name = 'JoystickApp'
         include ':app'
-        ''')
+        """)
 
-        # 3. build.gradle (Головний) - ОНОВЛЕНІ ВЕРСІЇ
+        # build.gradle (Root) - Використовуємо стабільні версії
         with open('build.gradle', 'w') as f:
-            f.write('''plugins {
-            id 'com.android.application' version '8.3.0' apply false
-            id 'org.jetbrains.kotlin.android' version '1.9.23' apply false
+            f.write("""plugins {
+            id 'com.android.application' version '8.1.1' apply false
+            id 'org.jetbrains.kotlin.android' version '1.9.0' apply false
         }
-        ''')
+        """)
 
-        # 4. app/build.gradle
+        # app/build.gradle
         with open('app/build.gradle', 'w') as f:
-            f.write('''plugins {
+            f.write("""plugins {
             id 'com.android.application'
             id 'org.jetbrains.kotlin.android'
         }
-
         android {
             namespace 'com.example.joystickapp'
-            compileSdk 34
+            compileSdk 33
             defaultConfig {
                 applicationId 'com.example.joystickapp'
                 minSdk 24
-                targetSdk 34
+                targetSdk 33
                 versionCode 1
                 versionName '1.0'
             }
         }
-
         dependencies {
-            implementation 'androidx.core:core-ktx:1.12.0'
+            implementation 'androidx.core:core-ktx:1.9.0'
             implementation 'androidx.appcompat:appcompat:1.6.1'
-            implementation 'com.google.android.material:material:1.11.0'
+            implementation 'com.google.android.material:material:1.8.0'
             implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
         }
-        ''')
+        """)
 
-        # 5. Маніфест
+        # Manifest
         with open('app/src/main/AndroidManifest.xml', 'w') as f:
-            f.write('''<?xml version=\"1.0\" encoding=\"utf-8\"?>
-        <manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">
-            <application
-                android:label=\"Joystick\"
-                android:theme=\"@style/Theme.AppCompat.Light.NoActionBar\">
-                <activity
-                    android:name=\".MainActivity\"
-                    android:exported=\"true\">
+            f.write("""<?xml version='1.0' encoding='utf-8'?>
+        <manifest xmlns:android='http://schemas.android.com/apk/res/android'>
+            <application android:label='Joystick' android:theme='@style/Theme.AppCompat.Light.NoActionBar'>
+                <activity android:name='.MainActivity' android:exported='true'>
                     <intent-filter>
-                        <action android:name=\"android.intent.action.MAIN\" />
-                        <category android:name=\"android.intent.category.LAUNCHER\" />
+                        <action android:name='android.intent.action.MAIN' />
+                        <category android:name='android.intent.category.LAUNCHER' />
                     </intent-filter>
                 </activity>
             </application>
         </manifest>
-        ''')
+        """)
 
-        # 6. MainActivity.kt
+        # Layout
+        with open('app/src/main/res/layout/activity_main.xml', 'w') as f:
+            f.write("""<?xml version='1.0' encoding='utf-8'?>
+        <LinearLayout xmlns:android='http://schemas.android.com/apk/res/android'
+            android:layout_width='match_parent'
+            android:layout_height='match_parent'
+            android:orientation='vertical'
+            android:gravity='center'
+            android:background='#222222'>
+            <TextView android:id='@+id/status' android:text='Ready' android:textColor='#FFF' android:textSize='30sp'/>
+            <Button android:id='@+id/btnUp' android:text='UP' android:layout_width='150dp' android:layout_height='100dp'/>
+            <Button android:id='@+id/btnDown' android:text='DOWN' android:layout_width='150dp' android:layout_height='100dp'/>
+        </LinearLayout>
+        """)
+
+        # Kotlin Code
         with open('app/src/main/java/com/example/joystickapp/MainActivity.kt', 'w') as f:
-            f.write('''package com.example.joystickapp
+            f.write("""package com.example.joystickapp
         import androidx.appcompat.app.AppCompatActivity
         import android.os.Bundle
         import android.widget.Button
         import android.widget.TextView
-
         class MainActivity : AppCompatActivity() {
             override fun onCreate(savedInstanceState: Bundle?) {
                 super.onCreate(savedInstanceState)
                 setContentView(R.layout.activity_main)
-
                 val tv = findViewById<TextView>(R.id.status)
-                
-                findViewById<Button>(R.id.btnUp).setOnClickListener {
-                    tv.text = \"UP Pressed\"
-                }
-                
-                findViewById<Button>(R.id.btnDown).setOnClickListener {
-                    tv.text = \"DOWN Pressed\"
-                }
+                findViewById<Button>(R.id.btnUp).setOnClickListener { tv.text = 'UP' }
+                findViewById<Button>(R.id.btnDown).setOnClickListener { tv.text = 'DOWN' }
             }
         }
-        ''')
+        """)
+        EOF
 
-        # 7. activity_main.xml
-        with open('app/src/main/res/layout/activity_main.xml', 'w') as f:
-            f.write('''<?xml version=\"1.0\" encoding=\"utf-8\"?>
-        <LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"
-            android:layout_width=\"match_parent\"
-            android:layout_height=\"match_parent\"
-            android:orientation=\"vertical\"
-            android:gravity=\"center\"
-            android:background=\"#222222\">
+        # 3. Запуск генератора
+        python3 builder.py
 
-            <TextView
-                android:id=\"@+id/status\"
-                android:layout_width=\"wrap_content\"
-                android:layout_height=\"wrap_content\"
-                android:text=\"Joystick Ready\"
-                android:textColor=\"#FFFFFF\"
-                android:textSize=\"32sp\"
-                android:layout_marginBottom=\"50dp\"/>
-
-            <Button
-                android:id=\"@+id/btnUp\"
-                android:layout_width=\"200dp\"
-                android:layout_height=\"120dp\"
-                android:text=\"UP\"
-                android:textSize=\"24sp\"
-                android:layout_marginBottom=\"20dp\"/>
-
-            <Button
-                android:id=\"@+id/btnDown\"
-                android:layout_width=\"200dp\"
-                android:layout_height=\"120dp\"
-                android:text=\"DOWN\"
-                android:textSize=\"24sp\"/>
-
-        </LinearLayout>
-        ''')
-        "
-
-    - name: Build with Gradle
-      run: gradle assembleDebug --stacktrace
+        # 4. Фіксація версії Gradle (Щоб уникнути HasConvention error)
+        # Ми примусово ставимо версію 8.1.1, яка сумісна з нашими плагінами
+        gradle wrapper --gradle-version 8.1.1
+        
+        # 5. Збірка через створений враппер
+        ./gradlew assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
